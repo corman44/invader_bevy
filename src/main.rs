@@ -3,15 +3,16 @@ use rand::{prelude::*, distributions::Standard};
 
 pub const PLAYER_SIZE: f32  = 64.0;
 pub const PLAYER_SPEED: f32 = 500.0;
-pub const NUMBER_OF_ENEMIES: usize = 4;
-pub const ENEMY_SPEED: f32 = 32.0;
+pub const NUMBER_OF_ENEMIES: usize = 10;
+pub const ENEMY_SPEED: f32 = 200.0;
+pub const ENEMY_SIZE: f32 = 64.0;
 
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .add_systems(Startup, (spawn_player, spawn_camera, spawn_enemies))
-        .add_systems(Update, (player_movement))
-        .add_systems(Update, (enemy_movement, confine_player_movement))
+        .add_systems(Update, (player_movement,confine_player_movement))
+        .add_systems(Update, (enemy_movement, confine_enemy_movement))
         .run();
 }
 
@@ -19,7 +20,9 @@ fn main() {
 pub struct Player {}
 
 #[derive(Component)]
-pub struct Enemy {}
+pub struct Enemy {
+    pub direction: Vec2,
+}
 
 pub fn spawn_player(
     mut commands: Commands,
@@ -100,10 +103,13 @@ pub fn spawn_enemies(
                 texture: asset_server.load("sprites/ball_red_large.png"),
                 ..default()
             },
-            Enemy {},
+            Enemy {
+                direction: Vec2::new(random::<f32>(), random::<f32>()).normalize(),
+            },
         ));
     }
 }
+
 
 #[derive(Debug)]
 pub enum Direction {
@@ -125,29 +131,21 @@ impl Distribution<Direction> for Standard {
 }
 
 pub fn enemy_movement (
-    mut enemy_query: Query<&mut Transform, With<Enemy>>,
+    mut enemy_query: Query<(&mut Transform, &Enemy)>,
     time: Res<Time>,
 ) {
-    for mut each in enemy_query.iter_mut() {
-        let mut direction = Vec3::ZERO;
-        match random::<Direction>() {
-            Direction::Down => direction += Vec3::new(0.0, -1.0, 0.0),
-            Direction::Left => direction += Vec3::new(-3.0, 0.0, 0.0),
-            Direction::Right => direction += Vec3::new(1.0, 0.0, 0.0),
-            Direction::Up => direction += Vec3::new(0.0, 1.0, 0.0),
-        }
+    let mut enemy_vec: Vec<Enemy> = vec![];
+    let mut num_enemy = 0;
 
-        if direction.length() > 0.0 {
-            direction = direction.normalize();
-        }
-
-        each.translation += direction * ENEMY_SPEED * time.delta_seconds();
+    for (mut transform, enemy) in enemy_query.iter_mut() {
+        let mut direction = Vec3::new(enemy.direction.x, enemy.direction.y, 0.0);
+        transform.translation += direction * ENEMY_SPEED * time.delta_seconds();
     }
 }
 
 pub fn confine_player_movement(
     window_query: Query<&Window, With<PrimaryWindow>>,
-    mut player_query: Query<&mut Transform>,
+    mut player_query: Query<&mut Transform, With<Player>>,
 ) {
     if let Ok(mut player_transform) = player_query.get_single_mut() {
         let window = window_query.get_single().unwrap();
@@ -172,5 +170,38 @@ pub fn confine_player_movement(
         }
 
         player_transform.translation = translation;
+    }
+}
+
+pub fn confine_enemy_movement (
+    window_query: Query<&Window, With<PrimaryWindow>>,
+    mut enemy_query: Query<(&mut Transform, &mut Enemy)>
+) {
+    for (mut transform, mut enemy) in enemy_query.iter_mut() {
+        let window = window_query.get_single().unwrap();
+
+        let half_enemy_size = ENEMY_SIZE / 2.0;
+        let x_min = 0.0 + half_enemy_size;
+        let x_max = window.width() - half_enemy_size;
+        let y_min = 0.0 + half_enemy_size;
+        let y_max = window.height() - half_enemy_size;
+
+        let mut translation = transform.translation;
+
+
+        // if at edge, bounce
+        if translation.x < x_min {
+            enemy.direction.x = 1.0;
+        } else if translation.x > x_max {
+            enemy.direction.x = -1.0;
+        }
+        if translation.y < y_min {
+            enemy.direction.y = 1.0;
+        } else if translation.y > y_max {
+            enemy.direction.y = -1.0;            
+        }
+
+        transform.translation = translation;
+
     }
 }
