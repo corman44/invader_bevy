@@ -1,17 +1,18 @@
-use bevy::{prelude::*, window::PrimaryWindow, input::keyboard::KeyboardInput, render::view::window};
+use bevy::{prelude::*, window::PrimaryWindow};
 use rand::{prelude::*, distributions::Standard};
+use bevy_kira_audio::prelude::*;
 
 pub const PLAYER_SIZE: f32  = 64.0;
 pub const PLAYER_SPEED: f32 = 500.0;
-pub const NUMBER_OF_ENEMIES: usize = 10;
+pub const NUMBER_OF_ENEMIES: usize = 8;
 pub const ENEMY_SPEED: f32 = 200.0;
 pub const ENEMY_SIZE: f32 = 64.0;
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins)
+        .add_plugins((DefaultPlugins, AudioPlugin))
         .add_systems(Startup, (spawn_player, spawn_camera, spawn_enemies))
-        .add_systems(Update, (player_movement,confine_player_movement))
+        .add_systems(Update, (player_movement, confine_player_movement))
         .add_systems(Update, (enemy_movement, confine_enemy_movement))
         .run();
 }
@@ -134,11 +135,8 @@ pub fn enemy_movement (
     mut enemy_query: Query<(&mut Transform, &Enemy)>,
     time: Res<Time>,
 ) {
-    let mut enemy_vec: Vec<Enemy> = vec![];
-    let mut num_enemy = 0;
-
     for (mut transform, enemy) in enemy_query.iter_mut() {
-        let mut direction = Vec3::new(enemy.direction.x, enemy.direction.y, 0.0);
+        let direction = Vec3::new(enemy.direction.x, enemy.direction.y, 0.0);
         transform.translation += direction * ENEMY_SPEED * time.delta_seconds();
     }
 }
@@ -175,7 +173,9 @@ pub fn confine_player_movement(
 
 pub fn confine_enemy_movement (
     window_query: Query<&Window, With<PrimaryWindow>>,
-    mut enemy_query: Query<(&mut Transform, &mut Enemy)>
+    mut enemy_query: Query<(&mut Transform, &mut Enemy)>,
+    audio: Res<Audio>,
+    asset_server: Res<AssetServer>,
 ) {
     for (mut transform, mut enemy) in enemy_query.iter_mut() {
         let window = window_query.get_single().unwrap();
@@ -188,20 +188,26 @@ pub fn confine_enemy_movement (
 
         let mut translation = transform.translation;
 
-
         // if at edge, bounce
         if translation.x < x_min {
-            enemy.direction.x = 1.0;
+            translation.x = x_min;
+            enemy.direction.x *= -1.0;
+            audio.play(asset_server.load("audio/impactGeneric_light_000.ogg"));
         } else if translation.x > x_max {
-            enemy.direction.x = -1.0;
+            translation.x = x_max;
+            enemy.direction.x *= -1.0;
+            audio.play(asset_server.load("audio/impactGeneric_light_000.ogg"));
         }
         if translation.y < y_min {
-            enemy.direction.y = 1.0;
+            translation.y = y_min;
+            enemy.direction.y *= -1.0;
+            audio.play(asset_server.load("audio/impactGeneric_light_001.ogg"));
         } else if translation.y > y_max {
-            enemy.direction.y = -1.0;            
+            translation.y = y_max;
+            enemy.direction.y *= -1.0;
+            audio.play(asset_server.load("audio/impactGeneric_light_001.ogg"));
         }
-
         transform.translation = translation;
-
     }
 }
+
