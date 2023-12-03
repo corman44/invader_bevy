@@ -14,6 +14,7 @@ fn main() {
         .add_systems(Startup, (spawn_player, spawn_camera, spawn_enemies))
         .add_systems(Update, (player_movement, confine_player_movement))
         .add_systems(Update, (enemy_movement, confine_enemy_movement))
+        .add_systems(Update, enemy_hit_player)
         .run();
 }
 
@@ -211,3 +212,28 @@ pub fn confine_enemy_movement (
     }
 }
 
+
+pub fn enemy_hit_player(
+    mut commands: Commands,
+    mut player_query: Query<(Entity, &Transform), With<Player>>,
+    enemy_query: Query<&Transform, With<Enemy>>,
+    asset_server: Res<AssetServer>,
+    audio: Res<Audio>,
+) {
+    if let Ok((player_entity, player_transform)) = player_query.get_single_mut() {
+        for enemy_transform in enemy_query.iter() {
+            let distance = player_transform
+                .translation
+                .distance(enemy_transform.translation);
+            let player_radius = PLAYER_SIZE / 2.0;
+            let enemy_radiues = ENEMY_SIZE / 2.0;
+
+            if distance < player_radius + enemy_radiues {
+                println!("Enemy Hit Player!");
+                let sound_effect = asset_server.load("audio/explosionCrunch_000.ogg");
+                audio.play(sound_effect);
+                commands.entity(player_entity).despawn();
+            }
+        }
+    }
+}
