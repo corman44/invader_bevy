@@ -1,11 +1,13 @@
 use bevy::{prelude::*, window::PrimaryWindow};
 use bevy_kira_audio::{Audio, AudioControl};
 
-use crate::enemy::{components::Enemy, resources::*};
+use enemy::{components::Enemy, resources::*};
 use crate::events::GameOver;
-use crate::player::components::Player;
-use crate::score::resources::Score;
-use crate::star::{components::*, resources::*};
+use crate::game::enemy;
+use crate::game::score::resources::Score;
+use crate::game::star::components::Star;
+use crate::game::star::resources::STAR_SIZE;
+use super::components::Player;
 
 pub const PLAYER_SIZE: f32  = 64.0;
 pub const PLAYER_SPEED: f32 = 400.0;

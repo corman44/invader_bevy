@@ -1,10 +1,10 @@
 use bevy::prelude::*;
 
-use self::{resources::{HighScores, Score}, systems::{update_score, update_high_scores, high_scores_updated}};
-
-mod components;
 pub mod resources;
 mod systems;
+
+use resources::*;
+use systems::*;
 
 pub struct ScorePlugin;
 

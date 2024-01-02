@@ -1,9 +1,7 @@
 use bevy::{prelude::*, window::PrimaryWindow};
 
 use rand::prelude::*;
-use crate::star::{components::Star, resources::StarSpawnTimer};
-
-use super::resources::{NUMBER_OF_STARS, MAX_NUMBER_STARS};
+use super::{resources::{NUMBER_OF_STARS, MAX_NUMBER_STARS, StarSpawnTimer}, components::Star};
 
 pub fn spawn_stars(
     mut commands: Commands,

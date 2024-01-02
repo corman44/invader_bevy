@@ -1,26 +1,20 @@
+mod game;
+mod main_menu;
+mod events;
+
 use bevy::{prelude::*, window::PrimaryWindow};
-use bevy::app::AppExit;
-use enemy::EnemyPlugin;
-use events::{GameOver, exit_game, handle_game_over};
-use player::PlayerPlugin;
+
+use events::*;
+use game::GamePlugin;
 use rand::{prelude::*, distributions::Standard};
 use bevy_kira_audio::prelude::*;
-use score::ScorePlugin;
-use star::StarPlugin;
-
-mod enemy;
-mod player;
-mod score;
-mod star;
-mod events;
 
 fn main() {
     App::new()
         .add_plugins((DefaultPlugins, AudioPlugin))
-        .add_event::<GameOver>()
-        .add_plugins((EnemyPlugin, PlayerPlugin, StarPlugin, ScorePlugin))
+        .add_plugins(GamePlugin)
         .add_systems(Startup, spawn_camera)
-        .add_systems(Update, (exit_game,handle_game_over))
+        .add_systems(Update, (handle_game_over, exit_game))
         .run();
 }
 
