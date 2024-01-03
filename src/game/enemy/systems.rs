@@ -1,5 +1,6 @@
 use bevy::{prelude::*, window::PrimaryWindow};
 use bevy_kira_audio::Audio;
+use rand::distributions::Standard;
 use rand::prelude::*;
 
 use super::components::Enemy;
@@ -26,6 +27,15 @@ pub fn spawn_enemies(
                 direction: Vec2::new(random::<f32>(), random::<f32>()).normalize(),
             },
         ));
+    }
+}
+
+pub fn despawn_enemies(
+    mut commands: Commands,
+    enemy_query: Query<Entity, With<Enemy>>
+) {
+    for enemy in enemy_query.iter() {
+        commands.entity(enemy).despawn();
     }
 }
 
@@ -107,3 +117,5 @@ pub fn spawn_enemy_over_time(
         ));
     }
 }
+
+

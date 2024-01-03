@@ -1,53 +1,32 @@
 mod game;
 mod main_menu;
 mod events;
+mod systems;
 
-use bevy::{prelude::*, window::PrimaryWindow};
-
+use bevy::prelude::*;
 use events::*;
 use game::GamePlugin;
-use rand::{prelude::*, distributions::Standard};
+use main_menu::MainMenuPlugin;
 use bevy_kira_audio::prelude::*;
+use systems::{handle_game_over,exit_game, spawn_camera, transition_to_game_state, transition_to_main_menu_state};
 
 fn main() {
     App::new()
         .add_plugins((DefaultPlugins, AudioPlugin))
-        .add_plugins(GamePlugin)
+        .add_state::<AppState>()
+        .add_event::<GameOver>()
+        .add_plugins((GamePlugin, MainMenuPlugin))
         .add_systems(Startup, spawn_camera)
         .add_systems(Update, (handle_game_over, exit_game))
+        .add_systems(Update, (transition_to_game_state, transition_to_main_menu_state))
         .run();
 }
 
-
-pub fn spawn_camera(
-    mut commands: Commands,
-    window_query: Query<&Window, With<PrimaryWindow>>,
-) {
-    let window = window_query.get_single().unwrap();
-
-    commands.spawn(
-        Camera2dBundle {
-            transform: Transform::from_xyz(window.width() / 2.0, window.height() / 2.0, 0.0),
-            ..default()
-        }
-    );
+#[derive(States, Debug, Clone, Copy, Hash, PartialEq, Eq, Default)]
+pub enum AppState {
+    #[default]
+    MainMenu,
+    Game,
+    GameOver,
 }
 
-#[derive(Debug)]
-pub enum Direction {
-    Left,
-    Right,
-    Up,
-    Down
-}
-
-impl Distribution<Direction> for Standard {
-    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Direction {
-        match rng.gen_range(0..=3) {
-            0 => Direction::Left,
-            1 => Direction::Right,
-            2 => Direction::Up,
-            _ => Direction::Down,
-        }
-    }
-}

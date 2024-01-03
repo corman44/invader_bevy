@@ -2,8 +2,10 @@ use bevy::{prelude::*, window::PrimaryWindow};
 use bevy_kira_audio::{Audio, AudioControl};
 
 use enemy::{components::Enemy, resources::*};
+use crate::AppState;
 use crate::events::GameOver;
-use crate::game::enemy;
+use crate::game::{enemy, SimulationState};
+use crate::game::player::PlayerState;
 use crate::game::score::resources::Score;
 use crate::game::star::components::Star;
 use crate::game::star::resources::STAR_SIZE;
@@ -39,16 +41,16 @@ pub fn player_movement (
     if let Ok(mut transform) = player_query.get_single_mut() {
         let mut direction = Vec3::new(0.0,0.0,0.0);
 
-        if keyboard_input.pressed(KeyCode::Left) {
+        if keyboard_input.pressed(KeyCode::Left) || keyboard_input.pressed(KeyCode::A) {
             direction += Vec3::new(-1.0, 0.0, 0.0);
         }
-        if keyboard_input.pressed(KeyCode::Right) {
+        if keyboard_input.pressed(KeyCode::Right) || keyboard_input.pressed(KeyCode::D) {
             direction += Vec3::new(1.0, 0.0, 0.0);
         }
-        if keyboard_input.pressed(KeyCode::Up) {
+        if keyboard_input.pressed(KeyCode::Up) || keyboard_input.pressed(KeyCode::W) {
             direction += Vec3::new(0.0, 1.0, 0.0);
         }
-        if keyboard_input.pressed(KeyCode::Down) {
+        if keyboard_input.pressed(KeyCode::Down) || keyboard_input.pressed(KeyCode::S) {
             direction += Vec3::new(0.0, -1.0, 0.0);
         }
 
@@ -112,6 +114,9 @@ pub fn enemy_hit_player(
                 let sound_effect = asset_server.load("audio/explosionCrunch_000.ogg");
                 audio.play(sound_effect);
                 commands.entity(player_entity).despawn();
+                commands.insert_resource(NextState(Some(PlayerState::Dead)));
+                //commands.insert_resource(NextState(Some(AppState::GameOver)));
+                //commands.insert_resource(NextState(Some(SimulationState::Paused)));
                 game_over_event_writer.send(GameOver { score: score.value });
             }
         }
@@ -142,5 +147,27 @@ pub fn player_hit_star(
                 score.value += 1;
             }
         }
+    }
+}
+
+pub fn respawn_player(
+    mut commands: Commands,
+    window_query: Query<&Window, With<PrimaryWindow>>,
+    asset_server: Res<AssetServer>,
+    keyboard_input: Res<Input<KeyCode>>,
+) {
+    if keyboard_input.just_pressed(KeyCode::R) {
+        let window = window_query.get_single().unwrap();
+        commands.spawn(
+            (
+                SpriteBundle {
+                    transform: Transform::from_xyz(window.width() / 2.0, window.height() / 2.0, 0.0),
+                    texture: asset_server.load("sprites/ball_blue_large.png"),
+                    ..default()
+                },
+                Player {},
+            )
+        );
+        commands.insert_resource(NextState(Some(PlayerState::Alive)));
     }
 }
