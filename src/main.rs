@@ -10,6 +10,8 @@ use main_menu::MainMenuPlugin;
 use bevy_kira_audio::prelude::*;
 use systems::{handle_game_over,exit_game, spawn_camera, transition_to_game_state, transition_to_main_menu_state};
 
+// FIXME: only spawn player if dead and entering game
+
 fn main() {
     App::new()
         .add_plugins((DefaultPlugins, AudioPlugin))
