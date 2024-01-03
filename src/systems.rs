@@ -13,11 +13,11 @@ pub fn exit_game(
 
 pub fn handle_game_over(
     mut game_over_event_writer: EventReader<GameOver>,
-    mut commands: Commands,
+    mut next_app_state: ResMut<NextState<AppState>>
 ) {
     for event in game_over_event_writer.read() {
         println!("Final Score: {}", event.score.to_string());
-        commands.insert_resource(NextState(Some(AppState::GameOver)));
+        next_app_state.set(AppState::GameOver);
     }
 }
 
@@ -36,28 +36,29 @@ pub fn spawn_camera(
 }
 
 pub fn transition_to_game_state(
-    mut commands: Commands,
     keyboard_input: Res<Input<KeyCode>>,
     app_state: Res<State<AppState>>,
+    mut next_app_state: ResMut<NextState<AppState>>,
 ) {
     if keyboard_input.just_pressed(KeyCode::G) {
         if app_state.get() != &AppState::Game {
             println!("AppState: Game");
-            commands.insert_resource(NextState(Some(AppState::Game)));
+            next_app_state.set(AppState::Game);
         }
     }
 }
 
 pub fn transition_to_main_menu_state(
-    mut commands: Commands,
     keyboard_input: Res<Input<KeyCode>>,
     app_state: Res<State<AppState>>,
+    mut next_app_state: ResMut<NextState<AppState>>,
+    mut next_sim_state: ResMut<NextState<SimulationState>>,
 ) {
     if keyboard_input.just_pressed(KeyCode::M) {
         if app_state.get() != &AppState::MainMenu {
             println!("AppState: MainMenu");
-            commands.insert_resource(NextState(Some(AppState::MainMenu)));
-            commands.insert_resource(NextState(Some(SimulationState::Paused)));
+            next_app_state.set(AppState::MainMenu);
+            next_sim_state.set(SimulationState::Paused);
         }
     }
 }

@@ -100,6 +100,7 @@ pub fn enemy_hit_player(
     asset_server: Res<AssetServer>,
     audio: Res<Audio>,
     score: Res<Score>,
+    mut next_player_state: ResMut<NextState<PlayerState>>,
 ) {
     if let Ok((player_entity, player_transform)) = player_query.get_single_mut() {
         for enemy_transform in enemy_query.iter() {
@@ -114,9 +115,7 @@ pub fn enemy_hit_player(
                 let sound_effect = asset_server.load("audio/explosionCrunch_000.ogg");
                 audio.play(sound_effect);
                 commands.entity(player_entity).despawn();
-                commands.insert_resource(NextState(Some(PlayerState::Dead)));
-                //commands.insert_resource(NextState(Some(AppState::GameOver)));
-                //commands.insert_resource(NextState(Some(SimulationState::Paused)));
+                next_player_state.set(PlayerState::Dead);
                 game_over_event_writer.send(GameOver { score: score.value });
             }
         }
@@ -155,6 +154,7 @@ pub fn respawn_player(
     window_query: Query<&Window, With<PrimaryWindow>>,
     asset_server: Res<AssetServer>,
     keyboard_input: Res<Input<KeyCode>>,
+    mut next_player_state: ResMut<NextState<PlayerState>>,
 ) {
     if keyboard_input.just_pressed(KeyCode::R) {
         let window = window_query.get_single().unwrap();
@@ -168,6 +168,6 @@ pub fn respawn_player(
                 Player {},
             )
         );
-        commands.insert_resource(NextState(Some(PlayerState::Alive)));
+        next_player_state.set(PlayerState::Alive);
     }
 }
